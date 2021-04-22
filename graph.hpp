@@ -11,6 +11,7 @@
 #include <string>
 #include <cstdlib>
 #include <map>
+#include <climits>
 
 using namespace std;
 
@@ -117,11 +118,10 @@ vector<string> Graph<T>::get_vertices()
 {
 
     vector<string> vertexs;
-    typename map<string, map<string, T>>::iterator it;
 
-    for (it = adj_list.begin(); it != adj_list.end(); ++it)
+    for (auto x : adj_list) // for every vertex in adj_list
     {
-        vertexs.push_back(it->first);
+        vertexs.push_back(x.first); // add to vertexs
     }
     return vertexs;
 }
@@ -132,17 +132,17 @@ template <typename T>
 void Graph<T>::add_edge(const string &u, const string &v, const T &weight)
 {
 
-    if ((contains(u)) && (contains(v)) && (u != v))
-    {            //
-        edges++; //adds to our total amount of edges
+    if ((contains(u)) && (contains(v)) && (u != v)) //check if u & v exist and do not equal each other
+    {
+        edges++; // adds to our total amount of edges
     }
-    adj_list[u][v] = weight; //unweighted need to do both ways
+    adj_list[u][v] = weight; // unweighted need to do both ways
     adj_list[v][u] = weight;
 }
 template <typename T>
 bool Graph<T>::adjacent(const string &u, const string &v)
 {
-    return (contains(u) && contains(v) ? adj_list[u][v] && adj_list[v][u] : false);
+    return (contains(u) && contains(v) ? adj_list[u][v] && adj_list[v][u] : false); //contains u & v, if true uv & vu eg. AB and BA otherwise not adjacent
 }
 
 /* test5 */
@@ -151,16 +151,16 @@ template <typename T>
 vector<pair<string, string>> Graph<T>::get_edges()
 {
 
-    vector<string> vertexs;
-    vector<pair<string, string>> edge_list;
+    vector<string> vertexs;                 // our vertexs in the graph
+    vector<pair<string, string>> edge_list; // our edges in the graph
 
-    for (auto x : adj_list)
+    for (auto x : adj_list) // for every vertex in adj_list
     {
-        for (auto y : x.second)
+        for (auto y : x.second) // for every entry adjacent to adj_list[vertexs key]
         {
-            if (find(vertexs.begin(), vertexs.end(), y.first) != vertexs.end())
+            if (find(vertexs.begin(), vertexs.end(), y.first) != vertexs.end()) // if the adjacent key is not in verts
             {
-                edge_list.push_back(make_pair(x.first, y.first));
+                edge_list.push_back(make_pair(x.first, y.first)); // add to our list of edges
             }
         }
         vertexs.push_back(x.first);
@@ -177,11 +177,11 @@ vector<string> Graph<T>::get_neighbours(const string &u)
 
     vector<string> vertexs;
 
-    if (contains(u))
+    if (contains(u)) // check if u is in graph
     {
-        for (auto it = adj_list[u].begin(); it != adj_list[u].end(); ++it)
+        for (auto it : adj_list[u]) // for every adjacent with vertex key
         {
-            vertexs.push_back(it->first);
+            vertexs.push_back(it.first);
         }
     }
     return vertexs;
@@ -200,12 +200,12 @@ template <typename T>
 void Graph<T>::remove_edge(const string &u, const string &v)
 {
 
-    if (contains(u) && contains(v))
+    if (contains(u) && contains(v)) // checks if u and v exist in graph
     {
         adj_list[u].erase(v);
         edges--;
     }
-    adj_list[v].erase(u);
+    adj_list[v].erase(u); // removes both edges because undirected
 }
 
 /* test8 */
@@ -214,12 +214,12 @@ template <typename T>
 void Graph<T>::remove_vertex(const string &u)
 {
 
-    for (auto x : adj_list[u])
+    for (auto x : adj_list[u]) // for every adjacent in adj_list[u]
     {
-        adj_list[x.first].erase(u);
+        adj_list[x.first].erase(u); // removes all of u that is adjacent to any other key
         edges--;
     }
-    adj_list.erase(u);
+    adj_list.erase(u); // removes vertex u from the graph
 }
 
 /* test9 */
@@ -231,13 +231,13 @@ vector<string> Graph<T>::depth_first_traversal(const string &u)
     vector<string> visited;
     vector<string> queue;
 
-    queue.push_back(u);
+    queue.push_back(u); // add u to the queue
     while (!queue.empty())
     {
-        string current = queue.back();
-        queue.pop_back();
-        visited.push_back(current);
-        for (auto x = adj_list[current].rbegin(); x != adj_list[current].rend(); x++)
+        string current = queue.back();                                                // last element of queue
+        queue.pop_back();                                                             // remove it
+        visited.push_back(current);                                                   // this vertex has now been visited
+        for (auto x = adj_list[current].rbegin(); x != adj_list[current].rend(); x++) // reverse iterate through adj_list for adjacents
         {
             if (find(visited.begin(), visited.end(), x->first) == visited.end() && find(queue.begin(), queue.end(), x->first) == queue.end())
             {
@@ -281,32 +281,15 @@ vector<string> Graph<T>::breadth_first_traversal(const string &u)
 template <typename T>
 bool Graph<T>::contain_cycles()
 {
-
-    vector<string> visited;
-    vector<pair<string, string>> queue; // (vertex, parent)
-
-    queue.push_back(make_pair(adj_list.begin()->first, ""));
-    while (!queue.empty())
+    if (num_edges() >= num_vertices())
     {
-        string current = queue.back().first;
-        string parent = queue.back().second;
-        queue.pop_back();
-        visited.push_back(current);
-
-        for (auto x : adj_list[current])
-        {
-            if (find(visited.begin(), visited.end(), x.first) == visited.end() && find(queue.begin(), queue.end(), x.first) == queue.end())
-            { // (search through visited, value = x at first position) == visited.end()
-                queue.push_back(make_pair(x.first, current));
-            }
-
-            else if (x.first != parent) //does not allow anything smaller than 3
-            {
-                return true; // if the graph contains a cycle
-            }
-        }
+        return true;
     }
-    return false;
+
+    else
+    {
+        return false;
+    }
 }
 
 /* test12 */
@@ -314,5 +297,33 @@ bool Graph<T>::contain_cycles()
 template <typename T>
 Graph<T> Graph<T>::minimum_spanning_tree()
 {
-    return Graph<T>();
+
+    Graph<T> mst;
+    vector<string> visited;
+
+    string u = adj_list.begin()->first;
+    mst.add_vertex(u);
+    visited.push_back(u);
+
+    while (mst.num_vertices() < this->num_vertices())
+    {
+        int value = INT_MAX;
+        pair<string, string> linked;
+
+        for (auto x : visited)
+        {
+            for (auto y : adj_list[x])
+            {
+                if (find(visited.begin(), visited.end(), y.first) == visited.end() && y.second < value)
+                {
+                    value = y.second;
+                    linked = pair(x, y.first);
+                }
+            }
+        }
+        visited.push_back(linked.second);
+        mst.add_edge(linked.first, linked.second, adj_list[linked.first][linked.second]);
+    }
+
+    return mst; // return mst when finished
 }
